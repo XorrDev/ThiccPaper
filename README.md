@@ -1,2 +1,2 @@
 # ThiccPaper
-![](./ThiccPaper.png)
+<img style="float: right;" src="ThiccPaper.png">
