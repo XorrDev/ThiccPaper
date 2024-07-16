@@ -15,22 +15,18 @@ const startPaperMC = async (args) => {
         fs.mkdirSync(versionDir, { recursive: true });
     }
 
-    // Construct path to the JAR file
-    const jarPath = path.join(versionDir, `${currentVersion}.jar`);
-
-    // Check if the JAR file exists
-    if (!fs.existsSync(jarPath)) {
-        console.error(`JAR file ${currentVersion}.jar not found in ${versionDir}`);
-        return;
+    // Check if eula.txt exists
+    const eulaPath = path.join(versionDir, 'eula.txt');
+    if (!fs.existsSync(eulaPath)) {
+        // EULA does not exist, create eula.txt with eula=true
+        fs.writeFileSync(eulaPath, 'eula=true\n');
+        console.log(`Created eula.txt with eula=true in ${versionDir}`);
     }
 
-    // Update server.properties to enable RCON and set rcon.password
-    updateServerProperties(versionDir, 'enable-rcon', 'true');
-    updateServerProperties(versionDir, 'rcon.password', 'thiccpaper');
-
     // Start the PaperMC server process
-    await startServerProcess(jarPath, versionDir, args);
+    await startServerProcess(versionDir, currentVersion, args);
 };
+
 
 // Function to update server.properties
 const updateServerProperties = (versionDir, propertyName, value) => {
@@ -38,7 +34,12 @@ const updateServerProperties = (versionDir, propertyName, value) => {
 
     if (fs.existsSync(serverPropertiesPath)) {
         let serverProperties = fs.readFileSync(serverPropertiesPath, 'utf8');
-        serverProperties = serverProperties.replace(new RegExp(`^${propertyName}=.*`, 'm'), `${propertyName}=${value}`);
+        const regex = new RegExp(`^${propertyName}=.*`, 'm');
+        if (regex.test(serverProperties)) {
+            serverProperties = serverProperties.replace(regex, `${propertyName}=${value}`);
+        } else {
+            serverProperties += `\n${propertyName}=${value}`;
+        }
 
         // Write back the modified server.properties file
         fs.writeFileSync(serverPropertiesPath, serverProperties);
@@ -49,7 +50,7 @@ const updateServerProperties = (versionDir, propertyName, value) => {
 };
 
 // Function to start the server process
-const startServerProcess = async (jarPath, versionDir, args) => {
+const startServerProcess = async (versionDir, currentVersion, args) => {
     // Check if the server is already running by checking for a lock file
     const lockFilePath = path.join(__dirname, 'server.lock');
     if (fs.existsSync(lockFilePath)) {
@@ -78,7 +79,7 @@ const startServerProcess = async (jarPath, versionDir, args) => {
     }
 
     // Start the PaperMC server process with memory specification and without GUI
-    const serverProcess = spawn('java', [`-Xmx${memoryInMB}M`, '-jar', jarPath, '--nogui'], {
+    const serverProcess = spawn('java', [`-Xmx${memoryInMB}M`, '-jar', `${currentVersion}.jar`, '--nogui'], {
         cwd: versionDir,
         detached: true,  // Run the process detached (in the background)
         stdio: 'pipe'    // Use 'pipe' to capture stdout and stderr
@@ -91,6 +92,7 @@ const startServerProcess = async (jarPath, versionDir, args) => {
         const message = data.toString().trim();
         console.log(message);
         if (message.includes('Done (')) {
+            // Update server.properties
             console.log('Server startup complete. Closing this script.');
             setTimeout(() => {
                 process.exit(0); // Exit the script after a brief delay
@@ -118,3 +120,19 @@ const startServerProcess = async (jarPath, versionDir, args) => {
 
 // Export execute function
 module.exports.execute = startPaperMC;
+
+// Parse command line arguments
+const args = process.argv.slice(2); // Exclude 'node' and 'main.js'
+
+// Handle commands
+if (args[0] === 'start') {
+    startPaperMC(args.slice(1))
+        .then(() => {
+            console.log('PaperMC server started successfully.');
+        })
+        .catch((error) => {
+            console.error('Failed to start PaperMC server:', error.message);
+        });
+} else {
+    console.error('Invalid command. Usage: node main.js start <memory>');
+}
