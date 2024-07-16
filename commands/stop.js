@@ -17,7 +17,7 @@ async function sendRconCommand(command) {
         console.log(`RCON Command '${command}' sent: ${response}`);
         await rcon.end(); // Close the RCON connection
     } catch (err) {
-        console.error('Failed to send shutdown command. This is expected if the server is stopped.');
+        console.error(`Failed to send RCON command '${command}':`, err);
         throw err; // Re-throw the error to handle in caller function
     }
 }
@@ -25,7 +25,6 @@ async function sendRconCommand(command) {
 // Function to stop the PaperMC server
 const stopPaperMC = async () => {
     try {
-
         // Delete the server.lock file
         const lockFilePath = path.join(__dirname, 'server.lock');
         if (fs.existsSync(lockFilePath)) {
@@ -34,10 +33,12 @@ const stopPaperMC = async () => {
         } else {
             console.log('server.lock file not found.');
         }
+
         // Send the stop command via RCON
         await sendRconCommand('stop');
         console.log('Shutdown command sent successfully.');
     } catch (err) {
+        console.error('Failed to send shutdown command:', err);
     }
 };
 

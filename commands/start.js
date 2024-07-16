@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Function to start the PaperMC server
-const startPaperMC = (args) => {
+const startPaperMC = async (args) => {
     // Load package.json to get current-paper-version
     const packageJsonPath = path.join(__dirname, '..', 'package.json');
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
@@ -24,35 +24,32 @@ const startPaperMC = (args) => {
         return;
     }
 
-    // Check and update eula.txt
-    const eulaPath = path.join(versionDir, 'eula.txt');
-    if (fs.existsSync(eulaPath)) {
-        const eulaContent = fs.readFileSync(eulaPath, 'utf8');
-        if (!eulaContent.includes('eula=true')) {
-            console.log(`Updating eula.txt in ${versionDir}`);
-            fs.writeFileSync(eulaPath, 'eula=true\n');
-        }
-    } else {
-        console.error(`eula.txt not found in ${versionDir}`);
-        return;
-    }
+    // Update server.properties to enable RCON and set rcon.password
+    updateServerProperties(versionDir, 'enable-rcon', 'true');
+    updateServerProperties(versionDir, 'rcon.password', 'thiccpaper');
 
-    // Update server.properties to enable RCON
+    // Start the PaperMC server process
+    await startServerProcess(jarPath, versionDir, args);
+};
+
+// Function to update server.properties
+const updateServerProperties = (versionDir, propertyName, value) => {
     const serverPropertiesPath = path.join(versionDir, 'server.properties');
+
     if (fs.existsSync(serverPropertiesPath)) {
         let serverProperties = fs.readFileSync(serverPropertiesPath, 'utf8');
-        serverProperties = serverProperties.replace('enable-rcon=false', 'enable-rcon=true');
-        fs.writeFileSync(serverPropertiesPath, serverProperties);
-        // Set the rcon.password value directly
-        serverProperties = serverProperties.replace(/^rcon.password=.*/m, 'rcon.password=thiccpaper');
+        serverProperties = serverProperties.replace(new RegExp(`^${propertyName}=.*`, 'm'), `${propertyName}=${value}`);
 
         // Write back the modified server.properties file
         fs.writeFileSync(serverPropertiesPath, serverProperties);
+        console.log(`Updated ${propertyName} in server.properties to ${value}`);
     } else {
         console.error(`server.properties not found in ${versionDir}`);
-        return;
     }
+};
 
+// Function to start the server process
+const startServerProcess = async (jarPath, versionDir, args) => {
     // Check if the server is already running by checking for a lock file
     const lockFilePath = path.join(__dirname, 'server.lock');
     if (fs.existsSync(lockFilePath)) {
@@ -84,16 +81,26 @@ const startPaperMC = (args) => {
     const serverProcess = spawn('java', [`-Xmx${memoryInMB}M`, '-jar', jarPath, '--nogui'], {
         cwd: versionDir,
         detached: true,  // Run the process detached (in the background)
-        stdio: 'ignore'  // Ignore stdin, stdout, and stderr
+        stdio: 'pipe'    // Use 'pipe' to capture stdout and stderr
     });
 
-    console.log(`Started PaperMC server (${currentVersion}) with ${memory} memory allocation`);
+    console.log(`Started PaperMC server with ${memory} memory allocation`);
 
-    // Wait a bit to allow server to start
-    setTimeout(() => {
-        console.log('Server has started');
-        process.exit(0); // Exit the script while leaving the server process running
-    }, 10000); // Adjust delay as needed to ensure server has started
+    // Handle stdout and stderr data
+    serverProcess.stdout.on('data', (data) => {
+        const message = data.toString().trim();
+        console.log(message);
+        if (message.includes('Done (')) {
+            console.log('Server startup complete. Closing this script.');
+            setTimeout(() => {
+                process.exit(0); // Exit the script after a brief delay
+            }, 2000); // Adjust delay as needed
+        }
+    });
+
+    serverProcess.stderr.on('data', (data) => {
+        console.error(`Error from server process: ${data}`);
+    });
 
     // Event listener for process error
     serverProcess.on('error', (err) => {
