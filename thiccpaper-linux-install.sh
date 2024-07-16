@@ -26,7 +26,7 @@ npm install
 mkdir -p paper-installations
 
 # Create symbolic link for main.js
-sudo ln -sf "$(pwd)/main.js" /usr/local/bin/thiccpaper
+sudo ln -sf "/srv/ThiccPaper/main.js" /usr/local/bin/thiccpaper
 echo "Symbolic link created: /usr/local/bin/thiccpaper -> $(pwd)/main.js"
 
 # Display completion message
