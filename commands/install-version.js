@@ -2,6 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
+// Function to download the latest PaperMC build for a specific version
 const downloadLatestPaperMC = async (version) => {
     const api = 'https://papermc.io/api/v2';
     const projectName = 'paper'; // Project name
@@ -96,15 +97,19 @@ const updatePackageJson = (newVersion) => {
     console.log(`Updated current-paper-version to ${newVersion} in package.json`);
 };
 
-// Example usage:
-const projectName = 'paper';
-const version = '1.20';
-const latestBuild = '17'; // Replace with actual latest build number
+// Parse command line arguments
+const args = process.argv.slice(2); // Exclude 'node' and 'main.js'
 
-downloadLatestPaperMC(version)
-    .then((downloadedFilePath) => {
-        console.log(`Download for PaperMC version ${version} completed successfully.`);
-    })
-    .catch((error) => {
-        console.error('Download failed:', error.message);
-    });
+// Handle commands
+if (args[0] === 'install-version' && args[1]) {
+    const version = args[1];
+    downloadLatestPaperMC(version)
+        .then((downloadedFilePath) => {
+            console.log(`Download for PaperMC version ${version} completed successfully.`);
+        })
+        .catch((error) => {
+            console.error('Download failed:', error.message);
+        });
+} else {
+    console.error('Invalid command. Usage: node main.js install-version <version>');
+}

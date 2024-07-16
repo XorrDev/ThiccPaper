@@ -20,14 +20,13 @@ cd thiccpaper
 
 # Install required npm packages
 echo "Installing npm packages..."
-npm install
-
+sudo npm install
 # Create directory for Paper installations if not exists
 mkdir -p paper-installations
 
 # Create symbolic link for main.js
 sudo ln -sf "/srv/ThiccPaper/main.js" /usr/local/bin/thiccpaper
 echo "Symbolic link created: /usr/local/bin/thiccpaper -> $(pwd)/main.js"
-
+sudo chmod +x /usr/local/bin/thiccpaper
 # Display completion message
 echo "Installation complete. ThiccPaper is ready to use!"
