@@ -1,2 +1,2 @@
 # ThiccPaper
-<img style="float: right;" src="ThiccPaper.png">
+<img style="float: right;" src="ThiccPaperBanner.png">
