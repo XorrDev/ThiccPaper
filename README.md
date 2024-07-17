@@ -13,6 +13,8 @@
 
 
 ## Installing
+
+Paste the following in a debian-based linux terminal and watch the magic happen :)
 ```bash
 cd /srv/
 sudo git clone https://github.com/XorrDev/ThiccPaper.git
