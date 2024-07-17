@@ -10,3 +10,13 @@
 - **Server Process Control**: Starts, stops, and monitors Minecraft server instances, handling server lifecycle management.
 - **Remote Management**: Enables remote server administration through RCON, facilitating commands and management tasks from a remote console.
 - **Integration with Minecraft Ecosystem**: Aligns with the Minecraft community by supporting popular server software (PaperMC) and adhering to server administration best practices.
+
+
+## Installing
+```bash
+cd /srv/
+sudo git clone https://github.com/XorrDev/ThiccPaper.git
+cd ThiccPaper
+chmod +x thiccpaper-linux-install.sh
+./thiccpaper-linux-install.sh
+```
